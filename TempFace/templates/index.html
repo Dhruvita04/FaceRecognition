@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        #message {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #adminPanel, #registrationForm, #userPanel, #updateAttendanceForm, #deleteAttendanceForm, #viewAttendanceForm {
+            display: none;
+        }
+        input[type="text"], input[type="password"], input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #attendanceTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #attendanceTable th, #attendanceTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #attendanceTable th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Recognition Attendance System</h1>
+        <div id="mainPanel">
+            <button id="registerBtn" class="btn">Register</button>
+            <button id="loginBtn" class="btn">Login</button>
+            <button id="adminLoginBtn" class="btn">Teacher</button>
+        </div>
+        <div id="registrationForm">
+            <input type="text" id="username" placeholder="Enter your name">
+            <button id="captureBtn" class="btn">Capture Face</button>
+        </div>
+        <div id="userPanel">
+            <input type="text" id="attendanceName" placeholder="Enter your name">
+            <button id="markAttendanceBtn" class="btn">Mark Attendance</button>
+            <button id="userLogoutBtn" class="btn">Logout</button>
+        </div>
+        <div id="adminPanel">
+            <button id="showViewAttendanceFormBtn" class="btn">View Attendance</button>
+            <button id="showUpdateFormBtn" class="btn">Update Attendance</button>
+            <button id="showDeleteFormBtn" class="btn">Delete Attendance</button>
+            <button id="adminLogoutBtn" class="btn">Logout</button>
+        </div>
+        <div id="viewAttendanceForm">
+            <input type="date" id="viewDate">
+            <button id="viewAttendanceBtn" class="btn">View Attendance</button>
+        </div>
+        <div id="updateAttendanceForm">
+            <input type="date" id="updateDate">
+            <input type="text" id="updateName" placeholder="Enter name">
+            <input type="text" id="updateTime" placeholder="Enter new time (HH:MM:SS)">
+            <button id="updateAttendanceBtn" class="btn">Update Attendance</button>
+        </div>
+        <div id="deleteAttendanceForm">
+            <input type="date" id="deleteDate">
+            <input type="text" id="deleteName" placeholder="Enter name">
+            <button id="deleteAttendanceBtn" class="btn">Delete Attendance</button>
+        </div>
+        <div id="message"></div>
+        <table id="attendanceTable"></table>
+    </div>
+    <script>
+        const mainPanel = document.getElementById('mainPanel');
+        const registrationForm = document.getElementById('registrationForm');
+        const userPanel = document.getElementById('userPanel');
+        const adminPanel = document.getElementById('adminPanel');
+        const viewAttendanceForm = document.getElementById('viewAttendanceForm');
+        const updateAttendanceForm = document.getElementById('updateAttendanceForm');
+        const deleteAttendanceForm = document.getElementById('deleteAttendanceForm');
+        const message = document.getElementById('message');
+        const attendanceTable = document.getElementById('attendanceTable');
+
+        document.getElementById('registerBtn').addEventListener('click', () => {
+            mainPanel.style.display = 'none';
+            registrationForm.style.display = 'block';
+        });
+
+        document.getElementById('captureBtn').addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            if (!username) {
+                message.textContent = 'Please enter your name.';
+                return;
+            }
+            fetch('/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: username})
+            }).then(response => response.text()).then(msg => {
+                message.textContent = msg;
+                registrationForm.style.display = 'none';
+                mainPanel.style.display = 'block';
+            });
+        });
+
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            fetch('/login').then(response => response.text()).then(msg => {
+                message.textContent = msg;
+                if (msg.startsWith('Welcome')) {
+                    mainPanel.style.display = 'none';
+                    userPanel.style.display = 'block';
+                }
+            });
+        });
+
+        document.getElementById('markAttendanceBtn').addEventListener('click', () => {
+            const username = document.getElementById('attendanceName').value;
+            if (!username) {
+                message.textContent = 'Please enter your name.';
+                return;
+            }
+            fetch('/mark_attendance', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: username})
+            }).then(response => response.text()).then(msg => {
+                message.textContent = msg;
+            });
+        });
+
+        document.getElementById('adminLoginBtn').addEventListener('click', () => {
+            const username = prompt('Enter Teacher Username:');
+            const password = prompt('Enter Teacher Password:');
+            fetch('/admin_login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
+            }).then(response => response.text()).then(msg => {
+                message.textContent = msg;
+                if (msg === 'Admin logged in successfully') {
+                    mainPanel.style.display = 'none';
+                    adminPanel.style.display = 'block';
+                }
+            });
+        });
+
+        document.getElementById('showViewAttendanceFormBtn').addEventListener('click', () => {
+            viewAttendanceForm.style.display = 'block';
+            updateAttendanceForm.style.display = 'none';
+            deleteAttendanceForm.style.display = 'none';
+        });
+
+        document.getElementById('viewAttendanceBtn').addEventListener('click', () => {
+            const date = document.getElementById('viewDate').value;
+            if (!date) {
+                message.textContent = 'Please select a date.';
+                return;
+            }
+            fetch('/view_attendance', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({date: date})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    attendanceTable.innerHTML = '';
+                    if (data.length > 0) {
+                        const headers = Object.keys(data[0]);
+                        let tableHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+                        tableHTML += data.map(row => 
+                            '<tr>' + headers.map(h => `<td>${row[h]}</td>`).join('') + '</tr>'
+                        ).join('');
+                        attendanceTable.innerHTML = tableHTML;
+                        message.textContent = `Showing attendance for ${date}`;
+                    } else {
+                        message.textContent = `No attendance records found for ${date}.`;
+                    }
+                });
+        });
+
+        document.getElementById('showUpdateFormBtn').addEventListener('click', () => {
+            updateAttendanceForm.style.display = 'block';
+            viewAttendanceForm.style.display = 'none';
+            deleteAttendanceForm.style.display = 'none';
+        });
+
+        document.getElementById('showDeleteFormBtn').addEventListener('click', () => {
+            deleteAttendanceForm.style.display = 'block';
+            viewAttendanceForm.style.display = 'none';
+            updateAttendanceForm.style.display = 'none';
+        });
+
+        document.getElementById('updateAttendanceBtn').addEventListener('click', () => {
+            const date = document.getElementById('updateDate').value;
+            const name = document.getElementById('updateName').value;
+            const newTime = document.getElementById('updateTime').value;
+            fetch('/update_attendance', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({date, name, new_time: newTime})
+            }).then(response => response.text()).then(msg => {
+                message.textContent = msg;
+            });
+        });
+
+        document.getElementById('deleteAttendanceBtn').addEventListener('click', () => {
+            const date = document.getElementById('deleteDate').value;
+            const name = document.getElementById('deleteName').value;
+            fetch('/delete_attendance', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({date, name})
+            }).then(response => response.text()).then(msg => {
+                message.textContent = msg;
+            });
+        });
+
+        document.getElementById('userLogoutBtn').addEventListener('click', logout);
+        document.getElementById('adminLogoutBtn').addEventListener('click', logout);
+
+        function logout() {
+            fetch('/logout').then(response => response.text()).then(msg => {
+                message.textContent = msg;
+                mainPanel.style.display = 'block';
+                userPanel.style.display = 'none';
+                adminPanel.style.display = 'none';
+                viewAttendanceForm.style.display = 'none';
+                updateAttendanceForm.style.display = 'none';
+                deleteAttendanceForm.style.display = 'none';
+                attendanceTable.innerHTML = '';
+            });
+        }
+    </script>
+</body>
+</html>
